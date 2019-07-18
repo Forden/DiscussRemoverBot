@@ -1,7 +1,10 @@
 # coding: utf8
 
 import sqlite3
+import typing
+
 from aiogram import types
+
 
 class DataConn:
     def __init__(self, db_name):
@@ -15,6 +18,7 @@ class DataConn:
         self.conn.close()
         if exc_val:
             raise
+
 
 class Chats:
     @staticmethod
@@ -30,7 +34,7 @@ class Chats:
         with DataConn('db.db') as conn:
             curs = conn.cursor()
             sql = 'INSERT INTO `admins` (`chat_id`) VALUES (?)'
-            curs.execute(sql, (chat.id, ))
+            curs.execute(sql, (chat.id,))
             conn.commit()
 
     @staticmethod
@@ -40,6 +44,7 @@ class Chats:
                 curs = conn.cursor()
                 sql = 'UPDATE `pinned` SET `message_id` = ? WHERE `chat_id`= ?'
                 curs.execute(sql, (msg.message_id, chat.id))
+                conn.commit()
         else:
             with DataConn('db.db') as conn:
                 curs = conn.cursor()
@@ -52,15 +57,15 @@ class Chats:
         with DataConn('db.db') as conn:
             curs = conn.cursor()
             sql = 'DELETE FROM `pinned` WHERE `chat_id` = ?'
-            curs.execute(sql, (chat.id, ))
+            curs.execute(sql, (chat.id,))
             conn.commit()
-        
+
     @staticmethod
-    def get_pinned(chat: types.Chat) -> int:
+    def get_pinned(chat: types.Chat) -> typing.Union[int, None]:
         with DataConn('db.db') as conn:
             curs = conn.cursor()
             sql = 'SELECT `message_id` FROM `pinned` WHERE `chat_id` = ?'
-            curs.execute(sql, (chat.id, ))
+            curs.execute(sql, (chat.id,))
             res = curs.fetchone()
             if res:
                 return int(res[0])

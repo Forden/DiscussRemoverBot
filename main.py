@@ -1,5 +1,5 @@
 from aiogram import Bot, Dispatcher, exceptions, executor, types
-from aiogram.utils import markdown as MD
+from aiogram.utils import markdown as md
 
 import config
 import filters
@@ -18,7 +18,8 @@ async def start(msg: types.Message):
     keyboard.add(types.InlineKeyboardButton(text='Добавить бота в чат',
                                             url=f'https://telegram.me/{botinfo.username}?startgroup=true'))
     txt = [
-        f'Привет, <b>{MD.quote_html(msg.from_user.full_name)}</b>! Я помогу тебе удерживать конкретнее сообщение закрепленным, исправляя недостаток Telegram.\n',
+        f'Привет, <b>{md.quote_html(msg.from_user.full_name)}</b>! '
+        'Я помогу тебе удерживать конкретнее сообщение закрепленным, исправляя недостаток Telegram.\n',
         'Просто добавь меня в нужный чат и выдай права на закрепление сообщений. Об остальном я сразу расскажу.',
         'Если ты хочешь увидеть справку - используй команду /help'
     ]
@@ -26,7 +27,7 @@ async def start(msg: types.Message):
 
 
 @dp.message_handler(commands=['help'])
-async def help(msg: types.Message):
+async def cmd_help(msg: types.Message):
     botinfo = await bot.get_me()
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(types.InlineKeyboardButton(text='Добавить бота в чат',
@@ -48,7 +49,8 @@ async def new_member(msg: types.Message):
             if Chats.is_new(msg.chat):
                 Chats.register(msg.chat)
             txt = [
-                f'Привет, <b>{MD.quote_html(msg.chat.title)}</b>! Я помогу вам удерживать одно сообщение в закрепе, исправляя недостаток Telegram\n',
+                f'Привет, <b>{md.quote_html(msg.chat.title)}</b>! '
+                'Я помогу вам удерживать одно сообщение в закрепе, исправляя недостаток Telegram\n',
                 'Чтобы я запомнил нужное сообщение - просто ответь на него командой /remember.',
                 'Чтобы я забыл сообщение и позволял закреплять любые сообщения - используй команду /forget.'
             ]
@@ -62,13 +64,18 @@ async def new_member(msg: types.Message):
 async def remember(msg: types.Message):
     if msg.reply_to_message:
         Chats.set_pinned(msg.chat, msg.reply_to_message)
+        m = [
+            'Отлично, я запомнил это сообщение и буду закреплять его каждый раз, '
+            'когда сервисный аккаунт Telegram репостнет запись с канала'
+        ]
         await bot.send_message(
             msg.chat.id,
-            'Отлично, я запомнил это сообщение и буду закреплять его каждый раз, когда сервисный аккаунт Telegram репостнет запись с канала',
+            '\n'.join(m),
             reply_to_message_id=msg.reply_to_message.message_id
         )
     else:
-        await msg.reply('Эту команду можно использовать только в ответ на какое-то сообщение, иначе ничего не сработает')
+        m = ['Эту команду можно использовать только в ответ на какое-то сообщение, иначе ничего не сработает']
+        await msg.reply('\n'.join(m))
 
 
 @dp.message_handler(commands=['forget'], is_admin=True)
@@ -89,6 +96,7 @@ async def unpin(msg: types.Message):
         await bot.send_message(msg.chat.id, 'У меня недостаточно прав чтобы закреплять/откреплять сообщения')
     except exceptions.TelegramAPIError as e:
         await bot.send_message(msg.chat.id, f'Произошла ошибка: {e}')
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=False)
