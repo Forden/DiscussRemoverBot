@@ -10,6 +10,13 @@ dp = Dispatcher(bot)
 
 dp.filters_factory.bind(filters.AdminFilter)
 
+MEDIA_TYPES = [
+    types.ContentTypes.PHOTO, types.ContentTypes.DOCUMENT, types.ContentTypes.AUDIO,
+    types.ContentTypes.STICKER, types.ContentTypes.VIDEO, types.ContentTypes.VIDEO_NOTE,
+    types.ContentTypes.VOICE, types.ContentTypes.LOCATION, types.ContentTypes.CONTACT,
+    types.ContentTypes.ANIMATION, types.ContentTypes.TEXT
+]
+
 
 @dp.message_handler(lambda message: message.chat.type == 'private', commands=['start'])
 async def start(msg: types.Message):
@@ -84,7 +91,7 @@ async def forget(msg: types.Message):
     await msg.reply('Отлично, теперь я не буду мешать Telegram закреплять сообщения с канала')
 
 
-@dp.message_handler(lambda message: message.from_user.id == 777000)
+@dp.message_handler(lambda message: message.from_user.id == 777000, content_types=MEDIA_TYPES)
 async def unpin(msg: types.Message):
     try:
         to_be_pinned = Chats.get_pinned(msg.chat)

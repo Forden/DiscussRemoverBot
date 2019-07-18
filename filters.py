@@ -1,6 +1,7 @@
-import config
 from aiogram import Bot, types
 from aiogram.dispatcher.filters import BoundFilter
+
+import config
 
 bot = Bot(token=config.token, parse_mode=types.ParseMode.HTML)
 
