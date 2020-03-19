@@ -11,10 +11,10 @@ dp = Dispatcher(bot)
 dp.filters_factory.bind(filters.AdminFilter)
 
 MEDIA_TYPES = [
-    types.ContentTypes.PHOTO, types.ContentTypes.DOCUMENT, types.ContentTypes.AUDIO,
-    types.ContentTypes.STICKER, types.ContentTypes.VIDEO, types.ContentTypes.VIDEO_NOTE,
-    types.ContentTypes.VOICE, types.ContentTypes.LOCATION, types.ContentTypes.CONTACT,
-    types.ContentTypes.ANIMATION, types.ContentTypes.TEXT
+    types.ContentType.PHOTO, types.ContentType.DOCUMENT, types.ContentType.AUDIO,
+    types.ContentType.STICKER, types.ContentType.VIDEO, types.ContentType.VIDEO_NOTE,
+    types.ContentType.VOICE, types.ContentType.LOCATION, types.ContentType.CONTACT,
+    types.ContentType.ANIMATION, types.ContentType.TEXT
 ]
 
 
@@ -53,11 +53,11 @@ async def new_member(msg: types.Message):
     botinfo = await bot.get_me()
     for i in msg.new_chat_members:
         if i.id == botinfo.id:
-            if Chats.is_new(msg.chat):
-                Chats.register(msg.chat)
+            if await Chats.is_new(msg.chat):
+                await Chats.register(msg.chat)
             txt = [
                 f'Привет, <b>{md.quote_html(msg.chat.title)}</b>! '
-                'Я помогу вам удерживать одно сообщение в закрепе, исправляя недостаток Telegram\n',
+                'Я помогу вам удерживать одно сообщение закрепленным, исправляя недостаток Telegram\n',
                 'Чтобы я запомнил нужное сообщение - просто ответь на него командой /remember.',
                 'Чтобы я забыл сообщение и позволял закреплять любые сообщения - используй команду /forget.'
             ]
@@ -70,7 +70,7 @@ async def new_member(msg: types.Message):
 @dp.message_handler(commands=['remember'], is_admin=True)
 async def remember(msg: types.Message):
     if msg.reply_to_message:
-        Chats.set_pinned(msg.chat, msg.reply_to_message)
+        await Chats.set_pinned(msg.chat, msg.reply_to_message)
         m = [
             'Отлично, я запомнил это сообщение и буду закреплять его каждый раз, '
             'когда сервисный аккаунт Telegram репостнет запись с канала'
@@ -87,14 +87,14 @@ async def remember(msg: types.Message):
 
 @dp.message_handler(commands=['forget'], is_admin=True)
 async def forget(msg: types.Message):
-    Chats.remove_pinned(msg.chat)
+    await Chats.remove_pinned(msg.chat)
     await msg.reply('Отлично, теперь я не буду мешать Telegram закреплять сообщения с канала')
 
 
 @dp.message_handler(lambda message: message.from_user.id == 777000, content_types=MEDIA_TYPES)
 async def unpin(msg: types.Message):
     try:
-        to_be_pinned = Chats.get_pinned(msg.chat)
+        to_be_pinned = await Chats.get_pinned(msg.chat)
         if to_be_pinned is None:
             return True
         await msg.chat.unpin_message()
@@ -103,6 +103,13 @@ async def unpin(msg: types.Message):
         await bot.send_message(msg.chat.id, 'У меня недостаточно прав чтобы закреплять/откреплять сообщения')
     except exceptions.TelegramAPIError as e:
         await bot.send_message(msg.chat.id, f'Произошла ошибка: {e}')
+    except Exception as e:
+        print(e)
+
+
+@dp.errors_handler(exception=exceptions.BotBlocked)
+async def blocked_by_user(upd: types.Update, err: exceptions.BotBlocked):
+    print(str(err))
 
 
 if __name__ == '__main__':
